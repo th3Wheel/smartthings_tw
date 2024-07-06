@@ -3,7 +3,7 @@
   "domain": "smartthings_custom",
   "name": "SmartThings Custom",
   "after_dependencies": ["cloud"],
-  "codeowners": ["@tmh88"],
+  "codeowners": ["@gszabados"],
   "config_flow": true,
   "dependencies": ["webhook"],
   "dhcp": [
