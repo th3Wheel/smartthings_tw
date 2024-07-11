@@ -25,6 +25,8 @@ async def async_setup_entry(
     broker = hass.data[DOMAIN][DATA_BROKERS][config_entry.entry_id]
     switches = []
     for device in broker.devices.values():
+        if broker.any_assigned(device.device_id, "switch"):
+            switches.append(SmartThingsSwitch(device, "main"))
         for component in device.components:
             if "switch" in device.components[component]:
                 switches.append(SmartThingsSwitch(device, component))
