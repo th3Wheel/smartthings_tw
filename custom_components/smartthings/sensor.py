@@ -569,6 +569,38 @@ async def async_setup_entry(
     broker = hass.data[DOMAIN][DATA_BROKERS][config_entry.entry_id]
     entities: list[SensorEntity] = []
     for device in broker.devices.values():
+        for capability in broker.get_assigned(device.device_id, "sensor"):
+            if capability == Capability.three_axis:
+                entities.extend(
+                    [
+                        SmartThingsThreeAxisSensor(device, "main", index)
+                        for index in range(len(THREE_AXIS_NAMES))
+                    ]
+                )
+            elif capability == Capability.power_consumption_report:
+                entities.extend(
+                    [
+                        SmartThingsPowerConsumptionSensor(device, "main", report_name)
+                        for report_name in POWER_CONSUMPTION_REPORT_NAMES
+                    ]
+                )
+            else:
+                maps = CAPABILITY_TO_SENSORS[capability]
+                entities.extend(
+                    [
+                        SmartThingsSensor(
+                            device,
+                            "main",
+                            m.attribute,
+                            m.name,
+                            m.default_unit,
+                            m.device_class,
+                            m.state_class,
+                            m.entity_category,
+                        )
+                        for m in maps
+                    ]
+                )
         device_capabilities_for_sensor = broker.get_assigned(device.device_id, "sensor")
         for component in device.components:
             for capability in device.components[component]:
