@@ -14,5 +14,6 @@ __A Home Assistant custom Integration for SmartThings.__
 - Fixed missing sensors & controls 
 - All available capabilities are available
 - Included the recent changes from Core up to 2024.7.1
+- Fixed the missing "main" sensors, binary sensors and switches
 
 Based on: https://github.com/home-assistant/core/pull/99924 and https://github.com/contemplator1998/smartthings 
