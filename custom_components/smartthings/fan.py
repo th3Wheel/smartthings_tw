@@ -31,11 +31,14 @@ async def async_setup_entry(
 ) -> None:
     """Add fans for a config entry."""
     broker = hass.data[DOMAIN][DATA_BROKERS][config_entry.entry_id]
-    async_add_entities(
-        SmartThingsFan(device)
-        for device in broker.devices.values()
-        if broker.any_assigned(device.device_id, "fan")
-    )
+    fans = []
+    for device in broker.devices.values():
+        if broker.any_assigned(device.device_id, "fan"):
+            fans.append(SmartThingsFan(device, "main"))
+        for component in device.components:
+            if "fan" in device.components[component]:
+                fans.append(SmartThingsFan(device, component))
+    async_add_entities(fans)
 
 
 def get_capabilities(capabilities: Sequence[str]) -> Sequence[str] | None:
@@ -71,9 +74,10 @@ class SmartThingsFan(SmartThingsEntity, FanEntity):
 
     _attr_speed_count = int_states_in_range(SPEED_RANGE)
 
-    def __init__(self, device):
+    def __init__(self, device, component):
         """Init the class."""
         super().__init__(device)
+        self._component = component
         self._attr_supported_features = self._determine_features()
 
     def _determine_features(self):
@@ -88,23 +92,23 @@ class SmartThingsFan(SmartThingsEntity, FanEntity):
 
     async def async_set_percentage(self, percentage: int) -> None:
         """Set the speed percentage of the fan."""
-        await self._async_set_percentage(percentage)
+        await self._async_set_percentage(percentage, component_id=self._component)
 
     async def _async_set_percentage(self, percentage: int | None) -> None:
         if percentage is None:
-            await self._device.switch_on(set_status=True)
+            await self._device.switch_on(set_status=True, component_id=self._component)
         elif percentage == 0:
-            await self._device.switch_off(set_status=True)
+            await self._device.switch_off(set_status=True, component_id=self._component)
         else:
             value = math.ceil(percentage_to_ranged_value(SPEED_RANGE, percentage))
-            await self._device.set_fan_speed(value, set_status=True)
+            await self._device.set_fan_speed(value, set_status=True, component_id=self._component)
         # State is set optimistically in the command above, therefore update
         # the entity state ahead of receiving the confirming push updates
         self.async_write_ha_state()
 
     async def async_set_preset_mode(self, preset_mode: str) -> None:
         """Set the preset_mode of the fan."""
-        await self._device.set_fan_mode(preset_mode, set_status=True)
+        await self._device.set_fan_mode(preset_mode, set_status=True, component_id=self._component)
         self.async_write_ha_state()
 
     async def async_turn_on(
@@ -116,17 +120,17 @@ class SmartThingsFan(SmartThingsEntity, FanEntity):
         """Turn the fan on."""
         if FanEntityFeature.SET_SPEED in self._attr_supported_features:
             # If speed is set in features then turn the fan on with the speed.
-            await self._async_set_percentage(percentage)
+            await self._async_set_percentage(percentage, component_id=self._component)
         else:
             # If speed is not valid then turn on the fan with the
-            await self._device.switch_on(set_status=True)
+            await self._device.switch_on(set_status=True, component_id=self._component)
         # State is set optimistically in the command above, therefore update
         # the entity state ahead of receiving the confirming push updates
         self.async_write_ha_state()
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn the fan off."""
-        await self._device.switch_off(set_status=True)
+        await self._device.switch_off(set_status=True, component_id=self._component)
         # State is set optimistically in the command above, therefore update
         # the entity state ahead of receiving the confirming push updates
         self.async_write_ha_state()
@@ -134,12 +138,17 @@ class SmartThingsFan(SmartThingsEntity, FanEntity):
     @property
     def is_on(self) -> bool:
         """Return true if fan is on."""
-        return self._device.status.switch
+        if self._component == "main":
+            return self._device.status.switch
+        return self._device.status.components[self._component].switch
+        
 
     @property
     def percentage(self) -> int | None:
         """Return the current speed percentage."""
-        return ranged_value_to_percentage(SPEED_RANGE, self._device.status.fan_speed)
+        if self._component == "main":
+            return ranged_value_to_percentage(SPEED_RANGE, self._device.status.fan_speed)
+        return ranged_value_to_percentage(SPEED_RANGE, self._device.status.components[self._component].fan_speed)
 
     @property
     def preset_mode(self) -> str | None:
@@ -147,7 +156,9 @@ class SmartThingsFan(SmartThingsEntity, FanEntity):
 
         Requires FanEntityFeature.PRESET_MODE.
         """
-        return self._device.status.fan_mode
+        if self._component == "main":
+            return self._device.status.fan_mode
+        return self._device.status.components[self._component].fan_mode
 
     @property
     def preset_modes(self) -> list[str] | None:
@@ -155,4 +166,6 @@ class SmartThingsFan(SmartThingsEntity, FanEntity):
 
         Requires FanEntityFeature.PRESET_MODE.
         """
-        return self._device.status.supported_ac_fan_modes
+        if self._component == "main":
+            return self._device.status.supported_ac_fan_modes
+        return self._device.status.components[self._component].supported_ac_fan_modes
