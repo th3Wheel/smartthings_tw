@@ -38,6 +38,8 @@ async def async_setup_entry(
         for component in device.components:
             if "fan" in device.components[component]:
                 fans.append(SmartThingsFan(device, component))
+            elif component == "fan":
+                fans.append(SmartThingsFan(device, component))
     async_add_entities(fans)
 
 
