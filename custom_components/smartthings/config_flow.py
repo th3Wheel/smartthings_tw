@@ -41,17 +41,16 @@ class SmartThingsFlowHandler(ConfigFlow, domain=DOMAIN):
 
     VERSION = 2
 
-    api: SmartThings
-    app_id: str
-    location_id: str
-
     def __init__(self) -> None:
         """Create a new instance of the flow handler."""
-        self.access_token: str | None = None
+        self.access_token = None
+        self.app_id = None
+        self.api = None
         self.oauth_client_secret = None
         self.oauth_client_id = None
         self.installed_app_id = None
         self.refresh_token = None
+        self.location_id = None
         self.endpoints_initialized = False
 
     async def async_step_import(self, import_data: None) -> ConfigFlowResult:
@@ -89,11 +88,9 @@ class SmartThingsFlowHandler(ConfigFlow, domain=DOMAIN):
         # Show the next screen
         return await self.async_step_pat()
 
-    async def async_step_pat(
-        self, user_input: dict[str, str] | None = None
-    ) -> ConfigFlowResult:
+    async def async_step_pat(self, user_input=None):
         """Get the Personal Access Token and validate it."""
-        errors: dict[str, str] = {}
+        errors = {}
         if user_input is None or CONF_ACCESS_TOKEN not in user_input:
             return self._show_step_pat(errors)
 
@@ -169,9 +166,7 @@ class SmartThingsFlowHandler(ConfigFlow, domain=DOMAIN):
 
         return await self.async_step_select_location()
 
-    async def async_step_select_location(
-        self, user_input: dict[str, str] | None = None
-    ) -> ConfigFlowResult:
+    async def async_step_select_location(self, user_input=None):
         """Ask user to select the location to setup."""
         if user_input is None or CONF_LOCATION_ID not in user_input:
             # Get available locations
@@ -198,9 +193,7 @@ class SmartThingsFlowHandler(ConfigFlow, domain=DOMAIN):
         await self.async_set_unique_id(format_unique_id(self.app_id, self.location_id))
         return await self.async_step_authorize()
 
-    async def async_step_authorize(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
+    async def async_step_authorize(self, user_input=None):
         """Wait for the user to authorize the app installation."""
         user_input = {} if user_input is None else user_input
         self.installed_app_id = user_input.get(CONF_INSTALLED_APP_ID)
@@ -237,9 +230,7 @@ class SmartThingsFlowHandler(ConfigFlow, domain=DOMAIN):
             },
         )
 
-    async def async_step_install(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
+    async def async_step_install(self, data=None):
         """Create a config entry at completion of a flow and authorization of the app."""
         data = {
             CONF_ACCESS_TOKEN: self.access_token,
