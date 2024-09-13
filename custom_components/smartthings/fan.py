@@ -94,7 +94,7 @@ class SmartThingsFan(SmartThingsEntity, FanEntity):
 
     async def async_set_percentage(self, percentage: int) -> None:
         """Set the speed percentage of the fan."""
-        await self._async_set_percentage(percentage, component_id=self._component)
+        await self._async_set_percentage(percentage)
 
     async def _async_set_percentage(self, percentage: int | None) -> None:
         if percentage is None:
@@ -122,7 +122,7 @@ class SmartThingsFan(SmartThingsEntity, FanEntity):
         """Turn the fan on."""
         if FanEntityFeature.SET_SPEED in self._attr_supported_features:
             # If speed is set in features then turn the fan on with the speed.
-            await self._async_set_percentage(percentage, component_id=self._component)
+            await self._async_set_percentage(percentage)
         else:
             # If speed is not valid then turn on the fan with the
             await self._device.switch_on(set_status=True, component_id=self._component)
