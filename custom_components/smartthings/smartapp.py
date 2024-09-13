@@ -16,6 +16,7 @@ from pysmartthings import (
     CAPABILITIES,
     CLASSIFICATION_AUTOMATION,
     App,
+    AppEntity,
     AppOAuth,
     AppSettings,
     InstalledAppStatus,
