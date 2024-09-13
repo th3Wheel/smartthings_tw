@@ -83,7 +83,7 @@ class SmartThingsFan(SmartThingsEntity, FanEntity):
         self._attr_supported_features = self._determine_features()
 
     def _determine_features(self):
-        flags = FanEntityFeature.TURN_OFF | FanEntityFeature.TURN_ON
+        flags = FanEntityFeature.TURN_OFF | FanEntityFeature.TURN_ON | FanEntityFeature.SET_SPEED
 
         if self._device.get_capability(Capability.fan_speed):
             flags |= FanEntityFeature.SET_SPEED
