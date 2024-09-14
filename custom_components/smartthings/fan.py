@@ -91,10 +91,11 @@ class SmartThingsFan(SmartThingsEntity, FanEntity):
             if Capability.air_conditioner_fan_mode in self._device.capabilities:
                 flags |= FanEntityFeature.PRESET_MODE
         else:
-            if Capability.fan_speed in self._device.components[self._component].capabilities:
-                flags |= FanEntityFeature.SET_SPEED
-            if Capability.air_conditioner_fan_mode in self._device.components[self._component].capabilities:
-                flags |= FanEntityFeature.PRESET_MODE
+            for capability in self._device.components[self._component]:
+                if capability is Capability.fan_speed:
+                    flags |= FanEntityFeature.SET_SPEED
+                if capability is Capability.air_conditioner_fan_mode:
+                    flags |= FanEntityFeature.PRESET_MODE
 
         return flags
 
